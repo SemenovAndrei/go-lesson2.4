@@ -18,7 +18,7 @@ func TestGetMap(t *testing.T) {
 		{
 			name: "1",
 			args: args{
-				transaction: MakeTransactions1(),
+				transaction: MakeTransactions(),
 				id:          1,
 			},
 			want: map[string]int64{
@@ -48,7 +48,7 @@ func TestGetMapByMutex(t *testing.T) {
 		{
 			name: "1",
 			args: args{
-				transactions: MakeTransactions1(),
+				transactions: MakeTransactions(),
 				id:           1,
 				goroutines:   10000,
 			},
@@ -79,7 +79,7 @@ func TestGetMapByChannel(t *testing.T) {
 		{
 			name: "1",
 			args: args{
-				transactions: MakeTransactions1(),
+				transactions: MakeTransactions(),
 				id:           1,
 				partCount:    10000,
 			},
@@ -110,7 +110,7 @@ func TestGetMapByMutex2(t *testing.T) {
 		{
 			name: "1",
 			args: args{
-				transactions: MakeTransactions1(),
+				transactions: MakeTransactions(),
 				id:           1,
 				goroutines:   10000,
 			},
@@ -129,20 +129,70 @@ func TestGetMapByMutex2(t *testing.T) {
 	}
 }
 
-func MakeTransactions1() []Transaction {
-	const users = 10
-	const transactionsPerUser = 10_00
-	const transactionAmount = 1_00
-	transactions := make([]Transaction, users*transactionsPerUser)
-	for index := range transactions {
-		switch index % 100 {
-		case 0:
-			transactions[index] = Transaction{Id: 1, Amount: 1, Mcc: "1111"} // Например, каждая 100-ая транзакция в банке от нашего юзера в категории такой-то
-		case 20:
-			transactions[index] = Transaction{Id: 1, Amount: 2, Mcc: "2222"} // Например, каждая 120-ая транзакция в банке от нашего юзера в категории такой-то
-		default:
-			transactions[index] = Transaction{Id: 2, Amount: transactionAmount, Mcc: "5555"} // Транзакции других юзеров, нужны для "общей" массы
-		}
+func BenchmarkCategorization(b *testing.B) {
+	transactions := MakeTransactions()
+	want := map[string]int64{
+		"Рестораны":    200,
+		"Супермаркеты": 100,
 	}
-	return transactions
+	b.ResetTimer() // сбрасываем таймер, т.к. сама генерация транзакций достаточно ресурсоёмка
+	for i := 0; i < b.N; i++ {
+		result := GetMap(transactions, 1)
+		b.StopTimer() // останавливаем таймер, чтобы время сравнения не учитывалось
+		if !reflect.DeepEqual(result, want) {
+			b.Fatalf("invalid result, got %v, want %v", result, want)
+		}
+		b.StartTimer() // продолжаем работу таймера
+	}
+}
+
+func BenchmarkCategorizationByMutex(b *testing.B) {
+	transactions := MakeTransactions()
+	want := map[string]int64{
+		"Рестораны":    200,
+		"Супермаркеты": 100,
+	}
+	b.ResetTimer() // сбрасываем таймер, т.к. сама генерация транзакций достаточно ресурсоёмка
+	for i := 0; i < b.N; i++ {
+		result := GetMapByMutex(transactions, 1, 1000)
+		b.StopTimer() // останавливаем таймер, чтобы время сравнения не учитывалось
+		if !reflect.DeepEqual(result, want) {
+			b.Fatalf("invalid result, got %v, want %v", result, want)
+		}
+		b.StartTimer() // продолжаем работу таймера
+	}
+}
+
+func BenchmarkCategorizationByChannel(b *testing.B) {
+	transactions := MakeTransactions()
+	want := map[string]int64{
+		"Рестораны":    200,
+		"Супермаркеты": 100,
+	}
+	b.ResetTimer() // сбрасываем таймер, т.к. сама генерация транзакций достаточно ресурсоёмка
+	for i := 0; i < b.N; i++ {
+		result := GetMapByChannel(transactions, 1, 1000)
+		b.StopTimer() // останавливаем таймер, чтобы время сравнения не учитывалось
+		if !reflect.DeepEqual(result, want) {
+			b.Fatalf("invalid result, got %v, want %v", result, want)
+		}
+		b.StartTimer() // продолжаем работу таймера
+	}
+}
+
+func BenchmarkCategorizationByMutex2(b *testing.B) {
+	transactions := MakeTransactions()
+	want := map[string]int64{
+		"Рестораны":    200,
+		"Супермаркеты": 100,
+	}
+	b.ResetTimer() // сбрасываем таймер, т.к. сама генерация транзакций достаточно ресурсоёмка
+	for i := 0; i < b.N; i++ {
+		result := GetMapByMutex2(transactions, 1, 1000)
+		b.StopTimer() // останавливаем таймер, чтобы время сравнения не учитывалось
+		if !reflect.DeepEqual(result, want) {
+			b.Fatalf("invalid result, got %v, want %v", result, want)
+		}
+		b.StartTimer() // продолжаем работу таймера
+	}
 }
