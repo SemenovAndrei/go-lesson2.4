@@ -7,6 +7,7 @@ import (
 // variant 1
 func GetMap(transaction []Transaction, id int64) map[string]int64 {
 	total := make(map[string]int64)
+
 	for i := range transaction {
 		if transaction[i].Id == id {
 			category := TranslateMCC(transaction[i].Mcc)
