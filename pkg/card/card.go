@@ -22,10 +22,10 @@ func GetMapByMutex(transactions []Transaction, id, goroutines int64) map[string]
 	wg := sync.WaitGroup{}
 	mu := sync.Mutex{}
 	result := make(map[string]int64)
+	partSize := int64(len(transactions)) / goroutines
 
 	for i := int64(0); i < goroutines; i++ {
 		wg.Add(1)
-		partSize := int64(len(transactions)) / goroutines
 		part := transactions[i*partSize : (i+1)*partSize]
 		go func() {
 			m := GetMap(part, 1)
@@ -54,9 +54,9 @@ func GetMapByMutex(transactions []Transaction, id, goroutines int64) map[string]
 func GetMapByChannel(transactions []Transaction, id, partCount int64) map[string]int64 {
 	result := make(map[string]int64)
 	ch := make(chan map[string]int64)
+	partSize := int64(len(transactions)) / partCount
 
 	for i := int64(0); i < partCount; i++ {
-		partSize := int64(len(transactions)) / partCount
 		part := transactions[i*partSize : (i+1)*partSize]
 		go func(ch chan<- map[string]int64) {
 			ch <- GetMap(part, 1)
@@ -89,10 +89,10 @@ func GetMapByMutex2(transactions []Transaction, id, goroutines int64) map[string
 	wg := sync.WaitGroup{}
 	mu := sync.Mutex{}
 	result := make(map[string]int64)
+	partSize := int64(len(transactions)) / goroutines
 
 	for i := int64(0); i < goroutines; i++ {
 		wg.Add(1)
-		partSize := int64(len(transactions)) / goroutines
 		part := transactions[i*partSize : (i+1)*partSize]
 		go func() {
 			for _, i := range part {
